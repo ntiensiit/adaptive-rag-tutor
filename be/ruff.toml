@@ -1,0 +1,16 @@
+target-version = "py312"
+line-length = 120
+src = ["src", "tests", "scripts"]
+extend-exclude = [".venv", "build", "dist", "notebooks", "*.ps1"]
+
+[lint]
+select = ["ALL"]
+ignore = ["CPY001", "EM101", "EM102", "TRY003"]
+
+[lint.pydocstyle]
+convention = "google"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
