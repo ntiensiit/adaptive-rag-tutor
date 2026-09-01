@@ -11,7 +11,7 @@ type ExerciseContextValue = {
   attemptId: number | null;
   detail: PracticeDetail | null;
   loadingDetail: boolean;
-  selectAttempt: (id: number | null) => void;
+  selectAttempt: (id: number | null) => Promise<void>;
   clearAttempt: () => void;
   refreshPractices: () => Promise<void>;
   reloadDetail: () => Promise<void>;
@@ -32,33 +32,39 @@ export function ExerciseProvider({ children }: { children: React.ReactNode }) {
     setPractices(rows);
   }, [studentId]);
 
-  const reloadDetail = useCallback(async () => {
-    if (!attemptId) {
+  const loadAttempt = useCallback(async (id: number | null) => {
+    if (!id) {
       setDetail(null);
       return;
     }
     setLoadingDetail(true);
     try {
-      const row = await getPracticeDetail(attemptId);
+      const row = await getPracticeDetail(id);
       setDetail(row);
+    } catch {
+      setDetail(null);
     } finally {
       setLoadingDetail(false);
     }
-  }, [attemptId]);
+  }, []);
+
+  const selectAttempt = useCallback(
+    async (id: number | null) => {
+      setAttemptId(id);
+      await loadAttempt(id);
+    },
+    [loadAttempt],
+  );
+
+  const reloadDetail = useCallback(async () => {
+    await loadAttempt(attemptId);
+  }, [attemptId, loadAttempt]);
 
   useEffect(() => {
     refreshPractices().catch(() => setPractices([]));
     setAttemptId(null);
     setDetail(null);
   }, [studentId, refreshPractices]);
-
-  useEffect(() => {
-    reloadDetail().catch(() => setDetail(null));
-  }, [attemptId, reloadDetail]);
-
-  const selectAttempt = useCallback((id: number | null) => {
-    setAttemptId(id);
-  }, []);
 
   const clearAttempt = useCallback(() => {
     setAttemptId(null);

@@ -28,24 +28,14 @@ export function ExercisePanel({ onProgressChange, generateSignal = 0, onClose }:
     setPracticeError("");
     try {
       const item = await getPractice(studentId, COURSE_ID);
-      selectAttempt(item.attempt_id);
-      setDetail({
-        attempt_id: item.attempt_id,
-        topic: item.topic,
-        question: item.question,
-        student_answer: null,
-        feedback: null,
-        correct: null,
-        submitted: false,
-      });
-      setAnswer("");
+      await selectAttempt(item.attempt_id);
       await refreshPractices();
     } catch (err) {
       setPracticeError(err instanceof Error ? err.message : "Failed to load practice exercise.");
     } finally {
       setPracticeLoading(false);
     }
-  }, [studentId, selectAttempt, setDetail, refreshPractices]);
+  }, [studentId, selectAttempt, refreshPractices]);
 
   useEffect(() => {
     if (generateSignal > 0) loadPractice();
@@ -68,7 +58,7 @@ export function ExercisePanel({ onProgressChange, generateSignal = 0, onClose }:
   }
 
   const feedback = detail?.feedback ?? "";
-  const readOnly = detail?.submitted ?? false;
+  const submitted = detail?.submitted ?? false;
 
   return (
     <section className="relative flex h-full min-h-0 w-full flex-col rounded-2xl border border-border/80 bg-card/50 shadow-[0_0_30px_var(--glow)] backdrop-blur-sm">
@@ -126,9 +116,9 @@ export function ExercisePanel({ onProgressChange, generateSignal = 0, onClose }:
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="Write your answer..."
-              disabled={submitting || readOnly}
+              disabled={submitting || submitted}
             />
-            {!readOnly && (
+            {!submitted && (
               <button
                 className="rounded-xl bg-linear-to-r from-accent-2 to-violet-400 px-4 py-2 text-sm font-medium text-white transition-all hover:brightness-110 disabled:opacity-50"
                 disabled={submitting || !answer.trim()}
@@ -138,7 +128,7 @@ export function ExercisePanel({ onProgressChange, generateSignal = 0, onClose }:
                 {submitting ? "Evaluating..." : "Submit answer"}
               </button>
             )}
-            {feedback && (
+            {submitted && feedback && (
               <p className="rounded-xl border border-accent/30 bg-accent/10 p-3 text-sm text-foreground">{feedback}</p>
             )}
           </div>
