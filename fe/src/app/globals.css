@@ -37,3 +37,30 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+.rdp-dark {
+  --rdp-accent-color: var(--accent);
+  --rdp-accent-background-color: #22d3ee22;
+  --rdp-day-height: 2rem;
+  --rdp-day-width: 2rem;
+  color: var(--foreground);
+}
+
+.rdp-dark .rdp-month_caption {
+  color: var(--foreground);
+}
+
+.rdp-dark .rdp-weekday {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.rdp-dark .rdp-day_button {
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.rdp-dark .rdp-selected .rdp-day_button {
+  background: var(--accent);
+  color: var(--background);
+}

@@ -28,6 +28,7 @@ class Student(Base):
     interactions: Mapped[list["Interaction"]] = relationship(back_populates="student")
     practice_attempts: Mapped[list["PracticeAttempt"]] = relationship(back_populates="student")
     conversations: Mapped[list["Conversation"]] = relationship(back_populates="student")
+    mastery_snapshots: Mapped[list["MasterySnapshot"]] = relationship(back_populates="student")
 
 
 class Conversation(Base):
@@ -50,6 +51,15 @@ class TopicMastery(Base):
     topic: Mapped[str] = mapped_column(String(255), nullable=False)
     score: Mapped[float] = mapped_column(Float, default=0.5)
     student: Mapped["Student"] = relationship(back_populates="masteries")
+
+
+class MasterySnapshot(Base):
+    __tablename__ = "mastery_snapshots"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), nullable=False)
+    avg_score: Mapped[float] = mapped_column(Float, nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    student: Mapped["Student"] = relationship(back_populates="mastery_snapshots")
 
 
 class Misconception(Base):

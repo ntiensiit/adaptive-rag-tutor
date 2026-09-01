@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from adaptive_rag_tutor.config import settings
-from adaptive_rag_tutor.db.models import Misconception, TopicMastery
+from adaptive_rag_tutor.db.models import Misconception, MasterySnapshot, TopicMastery
 
 
 def clip_score(value: float) -> float:
@@ -44,8 +44,18 @@ def update_mastery(db: Session, student_id: int, topic: str, correct: bool, hint
         else:
             db.add(Misconception(student_id=student_id, topic=topic, pattern=misconception, count=1))
     db.commit()
+    _log_snapshot(db, student_id)
     result = score
     return result
+
+
+def _log_snapshot(db: Session, student_id: int) -> None:
+    rows = db.query(TopicMastery).filter(TopicMastery.student_id == student_id).all()
+    if not rows:
+        return
+    avg = sum(row.score for row in rows) / len(rows)
+    db.add(MasterySnapshot(student_id=student_id, avg_score=avg))
+    db.commit()
 
 
 def all_mastery(db: Session, student_id: int) -> dict[str, float]:

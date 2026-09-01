@@ -59,7 +59,7 @@ function ResizeHandle({ onDrag }: { onDrag: (dx: number) => void }) {
   );
 }
 
-export function ResizableColumns({ left, middle, right, showMiddle = false }: Props) {
+export function ResizableColumns({ left, middle, right, showMiddle = true }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW] = useState(DEFAULT_LEFT);
   const [rightW, setRightW] = useState(DEFAULT_RIGHT);
@@ -108,28 +108,19 @@ export function ResizableColumns({ left, middle, right, showMiddle = false }: Pr
     <>
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:hidden">
         {left}
-        {showMiddle && middle}
+        {middle}
         {right}
       </div>
       <div ref={ref} className="hidden h-full min-h-0 flex-1 lg:flex">
         <div className="flex h-full min-h-0 shrink-0 flex-col overflow-hidden" style={{ width: leftW }}>
           {left}
         </div>
-        {showMiddle ? (
-          <>
-            <ResizeHandle onDrag={dragLeft} />
-            <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{middle}</div>
-            <ResizeHandle onDrag={dragRight} />
-            <div className="flex h-full min-h-0 shrink-0 flex-col overflow-hidden" style={{ width: rightW }}>
-              {right}
-            </div>
-          </>
-        ) : (
-          <>
-            <ResizeHandle onDrag={dragLeft} />
-            <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{right}</div>
-          </>
-        )}
+        <ResizeHandle onDrag={dragLeft} />
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{middle}</div>
+        <ResizeHandle onDrag={dragRight} />
+        <div className="flex h-full min-h-0 shrink-0 flex-col overflow-hidden" style={{ width: rightW }}>
+          {right}
+        </div>
       </div>
     </>
   );

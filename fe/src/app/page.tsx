@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ExercisePanel } from "@/components/ExercisePanel";
 import { LeftSidebar } from "@/components/LeftSidebar";
+import { ProgressChartPanel } from "@/components/ProgressChartPanel";
 import { ResizableColumns } from "@/components/ResizableColumns";
 import { useExercise } from "@/components/ExerciseContext";
 
@@ -29,14 +30,21 @@ export default function HomePage() {
 
   return (
     <ResizableColumns
-      showMiddle={exerciseOpen}
+      showMiddle
       left={<LeftSidebar progressKey={progressKey} onNewExercise={openExercise} />}
       middle={
-        <ExercisePanel
-          generateSignal={generateSignal}
-          onClose={closeExercise}
-          onProgressChange={() => setProgressKey((k) => k + 1)}
-        />
+        <div className="relative h-full min-h-0 w-full">
+          <ProgressChartPanel refreshKey={progressKey} />
+          {exerciseOpen && (
+            <div className="absolute inset-0 z-10">
+              <ExercisePanel
+                generateSignal={generateSignal}
+                onClose={closeExercise}
+                onProgressChange={() => setProgressKey((k) => k + 1)}
+              />
+            </div>
+          )}
+        </div>
       }
       right={<ChatPanel />}
     />

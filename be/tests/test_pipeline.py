@@ -31,6 +31,18 @@ def test_students_and_progress() -> None:
     student_id = students[0]["id"]
     progress = client.get(f"/students/{student_id}/progress").json()
     assert "mastery" in progress
+    timeline = client.get(f"/students/{student_id}/progress/timeline?year=2026&month=9").json()
+    assert timeline["year"] == 2026
+    assert timeline["month"] == 9
+    assert len(timeline["days"]) == 30
+
+
+def test_progress_timeline_invalid_month() -> None:
+    _ensure_seed()
+    students = client.get("/students").json()
+    student_id = students[0]["id"]
+    res = client.get(f"/students/{student_id}/progress/timeline?year=2026&month=13")
+    assert res.status_code == 400
 
 
 def test_chat_mocked() -> None:

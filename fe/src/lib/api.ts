@@ -63,6 +63,23 @@ export type Progress = {
   }[];
 };
 
+export type DayProgress = {
+  date: string;
+  avg_mastery: number | null;
+  chats: number;
+  exercises: number;
+  exercises_correct: number;
+};
+
+export type ProgressTimeline = {
+  student_id: number;
+  year: number;
+  month: number;
+  topic: string | null;
+  topic_mastery: number | null;
+  days: DayProgress[];
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -95,6 +112,12 @@ export function getPracticeDetail(attemptId: number) {
 
 export function getProgress(studentId: number) {
   return request<Progress>(`/students/${studentId}/progress`);
+}
+
+export function getProgressTimeline(studentId: number, year: number, month: number, topic?: string | null) {
+  const query = new URLSearchParams({ year: String(year), month: String(month) });
+  if (topic) query.set("topic", topic);
+  return request<ProgressTimeline>(`/students/${studentId}/progress/timeline?${query}`);
 }
 
 export function sendChat(studentId: number, courseId: number, message: string, conversationId?: number | null) {

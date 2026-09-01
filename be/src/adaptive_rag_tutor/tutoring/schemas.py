@@ -121,3 +121,20 @@ class PracticeDetailOut(BaseModel):
     feedback: str | None = None
     correct: bool | None = None
     submitted: bool
+
+
+class DayProgressOut(BaseModel):
+    date: str
+    avg_mastery: float | None = None
+    chats: int = 0
+    exercises: int = 0
+    exercises_correct: int = 0
+
+
+class ProgressTimelineOut(BaseModel):
+    student_id: int
+    year: int
+    month: int
+    topic: str | None = None
+    topic_mastery: float | None = None
+    days: list[DayProgressOut]

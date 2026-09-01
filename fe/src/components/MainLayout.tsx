@@ -3,6 +3,7 @@
 import { StudentProvider, useStudent } from "@/components/StudentContext";
 import { ConversationProvider } from "@/components/ConversationContext";
 import { ExerciseProvider } from "@/components/ExerciseContext";
+import { ProgressProvider } from "@/components/ProgressContext";
 import { AppShell } from "@/components/AppShell";
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -10,7 +11,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <AppShell students={students} studentId={studentId} onStudentChange={setStudentId}>
       <ConversationProvider>
-        <ExerciseProvider>{children}</ExerciseProvider>
+        <ExerciseProvider>
+          <ProgressProvider>{children}</ProgressProvider>
+        </ExerciseProvider>
       </ConversationProvider>
     </AppShell>
   );
