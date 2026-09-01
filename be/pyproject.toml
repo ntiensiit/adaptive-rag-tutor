@@ -4,18 +4,32 @@ version = "0.1.0"
 description = "Python project description"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn==0.52.4",
+    "pydantic==2.13.5",
+    "sqlalchemy==2.0.52",
+    "alembic==1.19.1",
+    "ollama==0.6.2",
+    "llama-index-core==0.14.24",
+    "llama-index-llms-ollama==0.11.0",
+    "llama-index-embeddings-ollama==0.10.0",
+    "llama-index-vector-stores-chroma==0.6.0",
+    "chromadb==1.5.9",
+    "pymupdf==1.28.2",
+]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.8",
-    "pytest>=8",
-    "pytest-cov>=6",
-    "pytest-xdist>=3.5.0",
-    "mypy>=1.13",
-    "hypothesis>=6",
+    "ruff==0.16.5",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-xdist==3.8.0",
+    "mypy==2.3.1",
+    "hypothesis==6.167.1",
+    "httpx==0.28.1",
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.32.0"]
 build-backend = "hatchling.build"
