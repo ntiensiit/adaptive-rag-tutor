@@ -8,9 +8,9 @@ import { getPractice, getProgress, submitPractice } from "@/lib/api";
 
 const COURSE_ID = 1;
 
-type Props = { onProgressChange?: () => void; generateSignal?: number; onClose?: () => void };
+type Props = { onProgressChange?: () => void; onClose?: () => void };
 
-export function ExercisePanel({ onProgressChange, generateSignal = 0, onClose }: Props) {
+export function ExercisePanel({ onProgressChange, onClose }: Props) {
   const { studentId } = useStudent();
   const { detail, loadingDetail, selectAttempt, refreshPractices, setDetail } = useExercise();
   const [answer, setAnswer] = useState("");
@@ -36,10 +36,6 @@ export function ExercisePanel({ onProgressChange, generateSignal = 0, onClose }:
       setPracticeLoading(false);
     }
   }, [studentId, selectAttempt, refreshPractices]);
-
-  useEffect(() => {
-    if (generateSignal > 0) loadPractice();
-  }, [generateSignal, loadPractice]);
 
   async function submitAnswer() {
     if (!detail || !answer.trim() || submitting || detail.submitted) return;

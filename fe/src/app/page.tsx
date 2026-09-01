@@ -11,16 +11,14 @@ import { useExercise } from "@/components/ExerciseContext";
 export default function HomePage() {
   const { attemptId, clearAttempt } = useExercise();
   const [progressKey, setProgressKey] = useState(0);
-  const [generateSignal, setGenerateSignal] = useState(0);
   const [exerciseOpen, setExerciseOpen] = useState(false);
 
   useEffect(() => {
     if (attemptId !== null) setExerciseOpen(true);
   }, [attemptId]);
 
-  function openExercise() {
+  function showExercisePanel() {
     setExerciseOpen(true);
-    setGenerateSignal((n) => n + 1);
   }
 
   function closeExercise() {
@@ -31,17 +29,13 @@ export default function HomePage() {
   return (
     <ResizableColumns
       showMiddle
-      left={<LeftSidebar progressKey={progressKey} onNewExercise={openExercise} />}
+      left={<LeftSidebar progressKey={progressKey} onShowExercise={showExercisePanel} />}
       middle={
         <div className="relative h-full min-h-0 w-full">
           <ProgressChartPanel refreshKey={progressKey} />
           {exerciseOpen && (
             <div className="absolute inset-0 z-10">
-              <ExercisePanel
-                generateSignal={generateSignal}
-                onClose={closeExercise}
-                onProgressChange={() => setProgressKey((k) => k + 1)}
-              />
+              <ExercisePanel onClose={closeExercise} onProgressChange={() => setProgressKey((k) => k + 1)} />
             </div>
           )}
         </div>

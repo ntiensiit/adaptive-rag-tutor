@@ -6,15 +6,13 @@ import { ChatHistoryPanel } from "@/components/ChatHistoryPanel";
 import { ExerciseHistoryPanel } from "@/components/ExerciseHistoryPanel";
 import { ProgressSummary } from "@/components/ProgressSummary";
 import { useConversation } from "@/components/ConversationContext";
-import { useExercise } from "@/components/ExerciseContext";
 
 type Tab = "history" | "exercises" | "progress";
-type Props = { progressKey: number; onNewExercise: () => void };
+type Props = { progressKey: number; onShowExercise: () => void };
 
-export function LeftSidebar({ progressKey, onNewExercise }: Props) {
+export function LeftSidebar({ progressKey, onShowExercise }: Props) {
   const [tab, setTab] = useState<Tab>("history");
   const { startNewChat } = useConversation();
-  const { clearAttempt } = useExercise();
   const historyActive = tab === "history";
   const exercisesActive = tab === "exercises";
   const progressActive = tab === "progress";
@@ -28,9 +26,8 @@ export function LeftSidebar({ progressKey, onNewExercise }: Props) {
     ? "border-accent-2 text-accent-2"
     : "border-transparent text-muted hover:text-foreground";
 
-  function startExercise() {
-    clearAttempt();
-    onNewExercise();
+  function showExercisePanel() {
+    onShowExercise();
     setTab("exercises");
   }
 
@@ -77,9 +74,9 @@ export function LeftSidebar({ progressKey, onNewExercise }: Props) {
           {exercisesActive && (
             <button
               className="rounded-lg border border-accent-2/40 bg-accent-2/10 p-1.5 text-accent-2 transition-colors hover:bg-accent-2/20"
-              onClick={startExercise}
+              onClick={showExercisePanel}
               type="button"
-              title="New exercise"
+              title="Show exercises"
             >
               <Sparkles className="h-4 w-4" />
             </button>
