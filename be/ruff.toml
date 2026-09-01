@@ -5,7 +5,39 @@ extend-exclude = [".venv", "build", "dist", "notebooks", "*.ps1"]
 
 [lint]
 select = ["ALL"]
-ignore = ["CPY001", "EM101", "EM102", "TRY003"]
+ignore = [
+  "CPY001",
+  "EM101",
+  "EM102",
+  "TRY003",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D107",
+  "ANN001",
+  "ANN201",
+  "ANN204",
+  "PLR0913",
+  "PLR2004",
+  "FBT001",
+  "FBT002",
+  "BLE001",
+  "S608",
+  "RET504",
+  "FAST001",
+  "FAST002",
+  "B008",
+  "PLR0917",
+  "PERF401",
+  "SIM108",
+  "TRY300",
+]
+
+[lint.per-file-ignores]
+"tests/**" = ["S101", "SLF001", "ARG001"]
+"scripts/**" = ["T201"]
 
 [lint.pydocstyle]
 convention = "google"

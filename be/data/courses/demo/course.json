@@ -1,0 +1,20 @@
+{
+  "topics": [
+    "linear regression",
+    "gradient descent",
+    "loss functions",
+    "overfitting",
+    "regularization"
+  ],
+  "prerequisites": {
+    "gradient descent": ["linear regression", "loss functions"],
+    "regularization": ["overfitting", "linear regression"]
+  },
+  "objectives": {
+    "linear regression": "Fit a line to data using least squares",
+    "gradient descent": "Iteratively minimize a loss function",
+    "loss functions": "Measure prediction error",
+    "overfitting": "Recognize when models memorize training data",
+    "regularization": "Penalize complexity to improve generalization"
+  }
+}

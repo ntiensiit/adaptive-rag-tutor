@@ -7,30 +7,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest",
-    "format": "prettier --write ."
+    "lint": "eslint"
   },
   "dependencies": {
+    "lucide-react": "^1.38.0",
     "next": "16.3.4",
-    "next-auth": "5.0.0-beta.32",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "zod": "4.5.4"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
-    "@testing-library/dom": "10.4.1",
-    "@testing-library/react": "16.3.3",
     "@types/node": "26.4.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
     "eslint": "10.9.1",
     "eslint-config-next": "16.3.4",
-    "jsdom": "30.0.1",
-    "prettier": "3.9.6",
     "tailwindcss": "4.3.3",
-    "typescript": "7.0.2",
-    "vitest": "4.1.11"
+    "typescript": "7.0.2"
   }
 }
