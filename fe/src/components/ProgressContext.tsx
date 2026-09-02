@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
+import { format } from "date-fns";
 
 type ProgressState = {
   year: number;
@@ -27,10 +28,10 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const periodLabel = useMemo(() => {
     if (selectedDate) {
-      const label = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      const label = format(selectedDate, "MMM d, yyyy");
       return label;
     }
-    const label = new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    const label = format(new Date(year, month - 1, 1), "MMM yyyy");
     return label;
   }, [month, selectedDate, year]);
   const value = useMemo(

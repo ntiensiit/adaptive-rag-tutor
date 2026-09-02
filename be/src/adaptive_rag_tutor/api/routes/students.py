@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from adaptive_rag_tutor.api.deps import DbDep
 from adaptive_rag_tutor.db.models import Conversation, Interaction, MasterySnapshot, Misconception, PracticeAttempt, Student, TopicMastery
 from adaptive_rag_tutor.tutoring.progress_updater import all_mastery
-from adaptive_rag_tutor.tutoring.schemas import ConversationOut, DayProgressOut, PracticeSummaryOut, ProgressTimelineOut
+from adaptive_rag_tutor.tutoring.schemas import ConversationOut, DayProgressOut, PracticeDetailOut, PracticeSessionOut, PracticeSummaryOut, ProgressTimelineOut
 
 router = APIRouter()
 
@@ -80,28 +80,68 @@ def _practice_title(question: str) -> str:
 
 
 @router.get("/{student_id}/practices", response_model=list[PracticeSummaryOut])
-def list_practices(student_id: int, course_id: int = 1, db: Session = DbDep) -> list[PracticeSummaryOut]:
+def list_practices(student_id: int, course_id: int = 1, session_id: str | None = None, db: Session = DbDep) -> list[PracticeSummaryOut]:
     student = db.get(Student, student_id)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    rows = (
-        db.query(PracticeAttempt)
-        .filter(PracticeAttempt.student_id == student_id, PracticeAttempt.course_id == course_id)
-        .order_by(PracticeAttempt.id.desc())
-        .all()
-    )
+    query = db.query(PracticeAttempt).filter(PracticeAttempt.student_id == student_id, PracticeAttempt.course_id == course_id)
+    if session_id:
+        query = query.filter(PracticeAttempt.session_id == session_id)
+    if session_id:
+        rows = query.order_by(PracticeAttempt.id.asc()).all()
+    else:
+        rows = query.order_by(PracticeAttempt.id.desc()).all()
     result = [
         PracticeSummaryOut(
             id=row.id,
             course_id=row.course_id,
             topic=row.topic,
             title=_practice_title(row.question),
+            question_type=row.question_type or "short_answer",
+            session_id=row.session_id,
             created_at=row.created_at,
             submitted=row.student_answer is not None,
             correct=row.correct,
         )
         for row in rows
     ]
+    return result
+
+
+def _practice_detail(row: PracticeAttempt) -> PracticeDetailOut:
+    submitted = row.student_answer is not None
+    result = PracticeDetailOut(
+        attempt_id=row.id,
+        topic=row.topic,
+        question=row.question,
+        question_type=row.question_type or "short_answer",
+        student_answer=row.student_answer,
+        feedback=row.feedback,
+        correct=row.correct,
+        submitted=submitted,
+    )
+    return result
+
+
+@router.get("/{student_id}/practice-sessions/{session_id}", response_model=PracticeSessionOut)
+def practice_session(student_id: int, session_id: str, course_id: int = 1, db: Session = DbDep) -> PracticeSessionOut:
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    rows = (
+        db.query(PracticeAttempt)
+        .filter(
+            PracticeAttempt.student_id == student_id,
+            PracticeAttempt.course_id == course_id,
+            PracticeAttempt.session_id == session_id,
+        )
+        .order_by(PracticeAttempt.id.asc())
+        .all()
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Practice session not found")
+    attempts = [_practice_detail(row) for row in rows]
+    result = PracticeSessionOut(session_id=session_id, created_at=rows[0].created_at, attempts=attempts)
     return result
 
 

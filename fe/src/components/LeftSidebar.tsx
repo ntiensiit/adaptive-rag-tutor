@@ -33,32 +33,34 @@ export function LeftSidebar({ progressKey, onShowExercise }: Props) {
 
   return (
     <aside className="grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-2xl border border-border/80 bg-card/50 shadow-[0_0_30px_var(--glow)] backdrop-blur-sm">
-      <div className="flex shrink-0 items-stretch border-b border-border/80">
-        <div className="scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 py-2">
-          <button
-            className={`flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${historyTab}`}
-            onClick={() => setTab("history")}
-            type="button"
-          >
-            <MessagesSquare className="h-3.5 w-3.5" />
-            Chats
-          </button>
-          <button
-            className={`flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${exercisesTab}`}
-            onClick={() => setTab("exercises")}
-            type="button"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            Drills
-          </button>
-          <button
-            className={`flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${progressTab}`}
-            onClick={() => setTab("progress")}
-            type="button"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Progress
-          </button>
+      <div className="flex min-w-0 shrink-0 items-stretch border-b border-border/80">
+        <div className="scrollbar-none min-w-0 flex-1 overflow-x-auto overscroll-x-contain">
+          <div className="flex w-max items-center gap-1 px-2 py-2">
+            <button
+              className={`flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${historyTab}`}
+              onClick={() => setTab("history")}
+              type="button"
+            >
+              <MessagesSquare className="h-3.5 w-3.5" />
+              Chats
+            </button>
+            <button
+              className={`flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${exercisesTab}`}
+              onClick={() => setTab("exercises")}
+              type="button"
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Drills
+            </button>
+            <button
+              className={`flex shrink-0 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${progressTab}`}
+              onClick={() => setTab("progress")}
+              type="button"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Progress
+            </button>
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-1 border-l border-border/60 px-2 py-2">
           {historyActive && (

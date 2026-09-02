@@ -10,19 +10,14 @@ import { DayProgress, getProgress, getProgressTimeline, Progress, ProgressTimeli
 type Props = { refreshKey?: number };
 
 function pct(value: number | null | undefined) {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   const text = `${Math.round(value * 100)}%`;
   return text;
 }
 
-function localDateKey(d: Date) {
-  const key = format(d, "yyyy-MM-dd");
-  return key;
-}
-
 function periodDays(days: DayProgress[], selectedDate?: Date) {
   if (!selectedDate) return days;
-  const key = localDateKey(selectedDate);
+  const key = format(selectedDate, "yyyy-MM-dd");
   const filtered = days.filter((d) => d.date === key);
   return filtered;
 }

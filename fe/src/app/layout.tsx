@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { MainLayout } from "@/components/MainLayout";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({

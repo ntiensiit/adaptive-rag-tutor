@@ -86,10 +86,28 @@ class RespondResponse(BaseModel):
     updated_mastery: dict[str, float]
 
 
+class QuestionType(StrEnum):
+    SHORT_ANSWER = "short_answer"
+    CONCEPTUAL = "conceptual"
+    APPLICATION = "application"
+    MULTIPLE_CHOICE = "multiple_choice"
+
+
+class PracticeGenerateRequest(BaseModel):
+    count: int = Field(default=1, ge=1, le=10)
+    question_types: list[QuestionType] = Field(default_factory=lambda: [QuestionType.SHORT_ANSWER])
+
+
 class PracticeResponse(BaseModel):
     attempt_id: int
     topic: str
     question: str
+    question_type: str = QuestionType.SHORT_ANSWER
+
+
+class PracticeGenerateResponse(BaseModel):
+    session_id: str
+    attempts: list[PracticeResponse]
 
 
 class PracticeSubmitRequest(BaseModel):
@@ -108,6 +126,8 @@ class PracticeSummaryOut(BaseModel):
     course_id: int
     topic: str
     title: str
+    question_type: str = QuestionType.SHORT_ANSWER
+    session_id: str | None = None
     created_at: datetime
     submitted: bool
     correct: bool | None = None
@@ -117,10 +137,17 @@ class PracticeDetailOut(BaseModel):
     attempt_id: int
     topic: str
     question: str
+    question_type: str = QuestionType.SHORT_ANSWER
     student_answer: str | None = None
     feedback: str | None = None
     correct: bool | None = None
     submitted: bool
+
+
+class PracticeSessionOut(BaseModel):
+    session_id: str
+    created_at: datetime
+    attempts: list[PracticeDetailOut]
 
 
 class DayProgressOut(BaseModel):

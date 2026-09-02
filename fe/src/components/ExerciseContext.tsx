@@ -1,89 +1,114 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getPracticeDetail, listPractices, PracticeDetail, PracticeSummary } from "@/lib/api";
+import {
+  getPracticeDetail,
+  getPracticeSession,
+  listPractices,
+  PracticeDetail,
+  PracticeGenerateResult,
+  PracticeSummary,
+} from "@/lib/api";
 import { useStudent } from "@/components/StudentContext";
 
 const COURSE_ID = 1;
 
 type ExerciseContextValue = {
   practices: PracticeSummary[];
-  attemptId: number | null;
-  detail: PracticeDetail | null;
-  loadingDetail: boolean;
-  selectAttempt: (id: number | null) => Promise<void>;
-  clearAttempt: () => void;
+  sessionId: string | null;
+  sessionDetails: PracticeDetail[];
+  loadingSession: boolean;
+  openSession: (sessionId: string, attemptIds: number[]) => Promise<void>;
+  openFromGenerate: (session: PracticeGenerateResult) => void;
+  patchSessionItem: (attemptId: number, patch: Partial<PracticeDetail>) => void;
+  clearSession: () => void;
   refreshPractices: () => Promise<void>;
-  reloadDetail: () => Promise<void>;
-  setDetail: React.Dispatch<React.SetStateAction<PracticeDetail | null>>;
 };
 
 const ExerciseContext = createContext<ExerciseContextValue | null>(null);
 
+function fromGenerateAttempt(row: PracticeGenerateResult["attempts"][number]): PracticeDetail {
+  const detail: PracticeDetail = {
+    attempt_id: row.attempt_id,
+    topic: row.topic,
+    question: row.question,
+    question_type: row.question_type,
+    student_answer: null,
+    feedback: null,
+    correct: null,
+    submitted: false,
+  };
+  return detail;
+}
+
 export function ExerciseProvider({ children }: { children: React.ReactNode }) {
   const { studentId } = useStudent();
   const [practices, setPractices] = useState<PracticeSummary[]>([]);
-  const [attemptId, setAttemptId] = useState<number | null>(null);
-  const [detail, setDetail] = useState<PracticeDetail | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionDetails, setSessionDetails] = useState<PracticeDetail[]>([]);
+  const [loadingSession, setLoadingSession] = useState(false);
 
   const refreshPractices = useCallback(async () => {
     const rows = await listPractices(studentId, COURSE_ID);
     setPractices(rows);
   }, [studentId]);
 
-  const loadAttempt = useCallback(async (id: number | null) => {
-    if (!id) {
-      setDetail(null);
-      return;
-    }
-    setLoadingDetail(true);
-    try {
-      const row = await getPracticeDetail(id);
-      setDetail(row);
-    } catch {
-      setDetail(null);
-    } finally {
-      setLoadingDetail(false);
-    }
+  const clearSession = useCallback(() => {
+    setSessionId(null);
+    setSessionDetails([]);
   }, []);
 
-  const selectAttempt = useCallback(
-    async (id: number | null) => {
-      setAttemptId(id);
-      await loadAttempt(id);
+  const openFromGenerate = useCallback((session: PracticeGenerateResult) => {
+    const details = session.attempts.map(fromGenerateAttempt);
+    setSessionId(session.session_id);
+    setSessionDetails(details);
+  }, []);
+
+  const openSession = useCallback(
+    async (sid: string, attemptIds: number[]) => {
+      setSessionId(sid);
+      setLoadingSession(true);
+      try {
+        if (sid.startsWith("solo-")) {
+          const row = await getPracticeDetail(attemptIds[0]);
+          setSessionDetails([row]);
+          return;
+        }
+        const data = await getPracticeSession(studentId, sid, COURSE_ID);
+        setSessionDetails(data.attempts);
+      } catch {
+        setSessionDetails([]);
+      } finally {
+        setLoadingSession(false);
+      }
     },
-    [loadAttempt],
+    [studentId],
   );
 
-  const reloadDetail = useCallback(async () => {
-    await loadAttempt(attemptId);
-  }, [attemptId, loadAttempt]);
+  const patchSessionItem = useCallback((attemptId: number, patch: Partial<PracticeDetail>) => {
+    setSessionDetails((rows) =>
+      rows.map((row) => (row.attempt_id === attemptId ? { ...row, ...patch } : row)),
+    );
+  }, []);
 
   useEffect(() => {
     refreshPractices().catch(() => setPractices([]));
-    setAttemptId(null);
-    setDetail(null);
-  }, [studentId, refreshPractices]);
-
-  const clearAttempt = useCallback(() => {
-    setAttemptId(null);
-    setDetail(null);
-  }, []);
+    clearSession();
+  }, [studentId, refreshPractices, clearSession]);
 
   const value = useMemo(
     () => ({
       practices,
-      attemptId,
-      detail,
-      loadingDetail,
-      selectAttempt,
-      clearAttempt,
+      sessionId,
+      sessionDetails,
+      loadingSession,
+      openSession,
+      openFromGenerate,
+      patchSessionItem,
+      clearSession,
       refreshPractices,
-      reloadDetail,
-      setDetail,
     }),
-    [practices, attemptId, detail, loadingDetail, selectAttempt, clearAttempt, refreshPractices, reloadDetail],
+    [practices, sessionId, sessionDetails, loadingSession, openSession, openFromGenerate, patchSessionItem, clearSession, refreshPractices],
   );
 
   return <ExerciseContext.Provider value={value}>{children}</ExerciseContext.Provider>;

@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { CalendarDays, LineChart } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart as ReLineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
+  Sector,
   Tooltip,
   XAxis,
   YAxis,
@@ -27,32 +27,27 @@ type Props = { refreshKey?: number };
 
 const PIE_COLORS = ["#22d3ee", "#818cf8", "#f472b6", "#34d399", "#fbbf24", "#fb7185"];
 
+function coloredPieSector(props: { index?: number }) {
+  const fill = PIE_COLORS[(props.index ?? 0) % PIE_COLORS.length];
+  return <Sector {...props} fill={fill} />;
+}
+
 function pct(value: number | null | undefined) {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   const text = `${Math.round(value * 100)}%`;
   return text;
 }
 
-function localDateKey(d: Date) {
-  const key = format(d, "yyyy-MM-dd");
-  return key;
-}
-
-function dayLabel(date: string) {
-  const label = format(new Date(`${date}T00:00:00`), "d");
-  return label;
-}
-
 function filterDays(days: DayProgress[], selectedDate?: Date) {
   if (!selectedDate) return days;
-  const key = localDateKey(selectedDate);
+  const key = format(selectedDate, "yyyy-MM-dd");
   const filtered = days.filter((d) => d.date === key);
   return filtered;
 }
 
 function chartRows(days: DayProgress[]) {
   const rows = days.map((d) => ({
-    date: dayLabel(d.date),
+    date: format(parseISO(d.date), "d"),
     mastery: d.avg_mastery !== null ? Math.round(d.avg_mastery * 100) : null,
     accuracy: d.exercises > 0 ? Math.round((d.exercises_correct / d.exercises) * 100) : null,
     drills: d.exercises,
@@ -106,11 +101,15 @@ function AggregateCharts({ days, progress }: { days: DayProgress[]; progress: Pr
           <p className="mb-2 text-xs uppercase tracking-wider text-muted">Topic mastery share</p>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={topicRows} dataKey="value" nameKey="topic" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                {topicRows.map((row, i) => (
-                  <Cell key={row.topic} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                ))}
-              </Pie>
+              <Pie
+                data={topicRows}
+                dataKey="value"
+                nameKey="topic"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={2}
+                shape={coloredPieSector}
+              />
               <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b" }} />
             </PieChart>
           </ResponsiveContainer>
@@ -277,7 +276,7 @@ export function ProgressChartPanel({ refreshKey = 0 }: Props) {
               <SummaryCard label="Average mastery" value={pct(summary.current)} />
               <SummaryCard
                 label="Period change"
-                value={summary.delta === null ? "—" : `${summary.delta >= 0 ? "+" : ""}${Math.round(summary.delta * 100)}%`}
+                value={summary.delta === null ? "-" : `${summary.delta >= 0 ? "+" : ""}${Math.round(summary.delta * 100)}%`}
               />
               <SummaryCard label="Drill accuracy" value={pct(summary.accuracy)} hint={summary.exercises > 0 ? `${summary.exercises} submitted` : undefined} />
               <SummaryCard label="Topics" value={String(Object.keys(progress?.mastery ?? {}).length)} />

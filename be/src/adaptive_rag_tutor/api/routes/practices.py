@@ -18,6 +18,7 @@ def practice_detail(attempt_id: int, db: Session = DbDep) -> PracticeDetailOut:
         attempt_id=row.id,
         topic=row.topic,
         question=row.question,
+        question_type=row.question_type or "short_answer",
         student_answer=row.student_answer,
         feedback=row.feedback,
         correct=row.correct,

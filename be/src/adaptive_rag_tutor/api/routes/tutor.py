@@ -1,18 +1,22 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
+import uuid
 
 from adaptive_rag_tutor.api.deps import DbDep
 from adaptive_rag_tutor.db.models import Course, Interaction, PracticeAttempt
 from adaptive_rag_tutor.tutoring.evaluator import evaluate_response
 from adaptive_rag_tutor.tutoring.pipeline import run_chat
-from adaptive_rag_tutor.tutoring.practice_generator import generate_practice
+from adaptive_rag_tutor.tutoring.practice_generator import generate_practice, generate_practices
 from adaptive_rag_tutor.tutoring.progress_updater import all_mastery, update_mastery
 from adaptive_rag_tutor.tutoring.schemas import (
     ChatRequest,
     ChatResponse,
+    PracticeGenerateRequest,
+    PracticeGenerateResponse,
     PracticeResponse,
     PracticeSubmitRequest,
     PracticeSubmitResponse,
+    QuestionType,
     RespondRequest,
     RespondResponse,
 )
@@ -58,13 +62,40 @@ def respond(body: RespondRequest, db: Session = DbDep) -> RespondResponse:
     return result
 
 
+def _to_practice_response(attempt: PracticeAttempt) -> PracticeResponse:
+    result = PracticeResponse(
+        attempt_id=attempt.id,
+        topic=attempt.topic,
+        question=attempt.question,
+        question_type=attempt.question_type or QuestionType.SHORT_ANSWER,
+    )
+    return result
+
+
 @router.get("/practice/{student_id}", response_model=PracticeResponse)
 def practice(student_id: int, course_id: int, db: Session = DbDep) -> PracticeResponse:
     course = db.get(Course, course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     attempt = generate_practice(db, student_id, course_id, store, course.metadata_json)
-    result = PracticeResponse(attempt_id=attempt.id, topic=attempt.topic, question=attempt.question)
+    result = _to_practice_response(attempt)
+    return result
+
+
+@router.post("/practice/{student_id}/generate", response_model=PracticeGenerateResponse)
+def generate_practice_session(
+    student_id: int, course_id: int, body: PracticeGenerateRequest, db: Session = DbDep,
+) -> PracticeGenerateResponse:
+    course = db.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    types = [t.value for t in body.question_types] or [QuestionType.SHORT_ANSWER]
+    session_id = str(uuid.uuid4())
+    attempts = generate_practices(
+        db, student_id, course_id, store, course.metadata_json, body.count, types, session_id,
+    )
+    rows = [_to_practice_response(row) for row in attempts]
+    result = PracticeGenerateResponse(session_id=session_id, attempts=rows)
     return result
 
 

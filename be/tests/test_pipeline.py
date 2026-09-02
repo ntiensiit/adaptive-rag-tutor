@@ -97,4 +97,91 @@ def test_practice_list_and_detail() -> None:
     assert any(r["id"] == attempt_id for r in rows)
     detail = client.get(f"/practices/{attempt_id}").json()
     assert detail["question"] == "What is gradient descent?"
+    assert detail["question_type"] == "short_answer"
     assert detail["submitted"] is False
+
+
+def test_practice_generate_session() -> None:
+    _ensure_seed()
+    students = client.get("/students").json()
+    student_id = students[0]["id"]
+    course_id = 1
+    batch_json = (
+        '{"questions": ['
+        '{"question_type": "multiple_choice", "question": "Pick the best definition.", '
+        '"rubric": "Chooses gradient descent.", "topic": "gradient descent", '
+        '"options": ["A", "B", "C", "D"], "correct_option": "A"},'
+        '{"question_type": "conceptual", "question": "Why use gradients?", '
+        '"rubric": "Explains optimization.", "topic": "gradient descent"}'
+        "]}"
+    )
+    with (
+        patch("adaptive_rag_tutor.tutoring.practice_generator._llm") as pg,
+        patch("adaptive_rag_tutor.vector_store.chroma_store.ChromaStore.search", return_value=[]),
+    ):
+        pg.return_value.complete.return_value.text = batch_json
+        created = client.post(
+            f"/tutor/practice/{student_id}/generate?course_id={course_id}",
+            json={"count": 2, "question_types": ["multiple_choice", "conceptual"]},
+        )
+    assert created.status_code == 200
+    body = created.json()
+    assert body["session_id"]
+    attempts = body["attempts"]
+    assert len(attempts) == 2
+    assert attempts[0]["question_type"] == "multiple_choice"
+    assert attempts[1]["question_type"] == "conceptual"
+    session = client.get(f"/students/{student_id}/practice-sessions/{body['session_id']}?course_id={course_id}")
+    assert session.status_code == 200
+    assert len(session.json()["attempts"]) == 2
+
+
+def _batch_json_for_range(types: list[str], start: int, count: int) -> str:
+    rows = []
+    for offset in range(count):
+        index = start + offset
+        qtype = types[index % len(types)]
+        if qtype == "multiple_choice":
+            rows.append(
+                f'{{"question_type": "{qtype}", "question": "Q{index}", "rubric": "R{index}", '
+                f'"topic": "topic", "options": ["A", "B", "C", "D"], "correct_option": "A"}}'
+            )
+        else:
+            rows.append(
+                f'{{"question_type": "{qtype}", "question": "Q{index}", "rubric": "R{index}", "topic": "topic"}}'
+            )
+    result = '{"questions": [' + ",".join(rows) + "]}"
+    return result
+
+
+def test_practice_generate_ten_mixed_types() -> None:
+    _ensure_seed()
+    students = client.get("/students").json()
+    student_id = students[0]["id"]
+    course_id = 1
+    types = ["short_answer", "conceptual", "application", "multiple_choice"]
+    chunks = [_batch_json_for_range(types, start, 2) for start in range(0, 10, 2)]
+    call_index = {"n": 0}
+
+    def complete(_prompt: str):
+        class Response:
+            text = chunks[call_index["n"]]
+        call_index["n"] += 1
+        return Response()
+
+    with (
+        patch("adaptive_rag_tutor.tutoring.practice_generator._llm") as pg,
+        patch("adaptive_rag_tutor.vector_store.chroma_store.ChromaStore.search", return_value=[]),
+    ):
+        pg.return_value.complete.side_effect = complete
+        created = client.post(
+            f"/tutor/practice/{student_id}/generate?course_id={course_id}",
+            json={"count": 10, "question_types": types},
+        )
+    assert created.status_code == 200
+    body = created.json()
+    assert body["session_id"]
+    attempts = body["attempts"]
+    assert len(attempts) == 10
+    assert attempts[3]["question_type"] == "multiple_choice"
+    assert attempts[4]["question_type"] == "short_answer"

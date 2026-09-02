@@ -31,6 +31,10 @@ def _migrate_db() -> None:
             cols = {c["name"] for c in insp.get_columns("practice_attempts")}
             if "feedback" not in cols:
                 conn.execute(text("ALTER TABLE practice_attempts ADD COLUMN feedback TEXT"))
+            if "question_type" not in cols:
+                conn.execute(text("ALTER TABLE practice_attempts ADD COLUMN question_type VARCHAR(64) DEFAULT 'short_answer'"))
+            if "session_id" not in cols:
+                conn.execute(text("ALTER TABLE practice_attempts ADD COLUMN session_id VARCHAR(64)"))
 
 
 def init_db() -> None:

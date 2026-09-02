@@ -1,12 +1,7 @@
 "use client";
 
+import { format, parseISO } from "date-fns";
 import { useConversation } from "@/components/ConversationContext";
-
-function formatWhen(iso: string) {
-  const date = new Date(iso);
-  const label = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return label;
-}
 
 export function ChatHistoryPanel() {
   const { conversations, conversationId, selectConversation } = useConversation();
@@ -29,7 +24,7 @@ export function ChatHistoryPanel() {
           >
             <p className="truncate text-sm font-medium">{c.title}</p>
             <p className="mt-0.5 text-[10px] text-muted">
-              {formatWhen(c.updated_at)} · {c.message_count} turns
+              {format(parseISO(c.updated_at), "MMM d")} | {c.message_count} turns
             </p>
           </button>
         );
