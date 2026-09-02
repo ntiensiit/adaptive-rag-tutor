@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { format, parseISO } from "date-fns";
 import { CalendarDays, LineChart } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import {
@@ -21,6 +20,7 @@ import {
 import { useProgress } from "@/components/ProgressContext";
 import { useStudent } from "@/components/StudentContext";
 import { DayProgress, getProgress, getProgressTimeline, Progress, ProgressTimeline } from "@/lib/api";
+import { chartRows, pct, periodDays, summaryStats } from "@/lib/progress";
 import "react-day-picker/style.css";
 
 type Props = { refreshKey?: number };
@@ -29,30 +29,8 @@ const PIE_COLORS = ["#22d3ee", "#818cf8", "#f472b6", "#34d399", "#fbbf24", "#fb7
 
 function coloredPieSector(props: { index?: number }) {
   const fill = PIE_COLORS[(props.index ?? 0) % PIE_COLORS.length];
-  return <Sector {...props} fill={fill} />;
-}
-
-function pct(value: number | null | undefined) {
-  if (value === null || value === undefined) return "-";
-  const text = `${Math.round(value * 100)}%`;
-  return text;
-}
-
-function filterDays(days: DayProgress[], selectedDate?: Date) {
-  if (!selectedDate) return days;
-  const key = format(selectedDate, "yyyy-MM-dd");
-  const filtered = days.filter((d) => d.date === key);
-  return filtered;
-}
-
-function chartRows(days: DayProgress[]) {
-  const rows = days.map((d) => ({
-    date: format(parseISO(d.date), "d"),
-    mastery: d.avg_mastery !== null ? Math.round(d.avg_mastery * 100) : null,
-    accuracy: d.exercises > 0 ? Math.round((d.exercises_correct / d.exercises) * 100) : null,
-    drills: d.exercises,
-  }));
-  return rows;
+  const sector = <Sector {...props} fill={fill} />;
+  return sector;
 }
 
 function SummaryCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -200,20 +178,8 @@ export function ProgressChartPanel({ refreshKey = 0 }: Props) {
     return () => document.removeEventListener("mousedown", onClick);
   }, [calendarOpen, setCalendarOpen]);
 
-  const days = useMemo(() => filterDays(timeline?.days ?? [], selectedDate), [selectedDate, timeline]);
-  const summary = useMemo(() => {
-    const tracked = days.filter((d) => d.avg_mastery !== null);
-    const start = tracked[0]?.avg_mastery ?? null;
-    const end = tracked[tracked.length - 1]?.avg_mastery ?? null;
-    const delta = start !== null && end !== null ? end - start : null;
-    const exercises = days.reduce((sum, d) => sum + d.exercises, 0);
-    const correct = days.reduce((sum, d) => sum + d.exercises_correct, 0);
-    const accuracy = exercises > 0 ? correct / exercises : null;
-    const scores = Object.values(progress?.mastery ?? {});
-    const current = end ?? (scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null);
-    const result = { start, end, delta, accuracy, exercises, current };
-    return result;
-  }, [days, progress]);
+  const days = useMemo(() => periodDays(timeline?.days ?? [], selectedDate), [selectedDate, timeline]);
+  const summary = useMemo(() => summaryStats(days, progress?.mastery), [days, progress]);
 
   const monthDate = new Date(year, month - 1, 1);
 

@@ -1,14 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import {
-  getPracticeDetail,
-  getPracticeSession,
-  listPractices,
-  PracticeDetail,
-  PracticeGenerateResult,
-  PracticeSummary,
-} from "@/lib/api";
+import { getPracticeDetail, getPracticeSession, listPractices, PracticeDetail, PracticeGenerateResult, PracticeSummary } from "@/lib/api";
 import { useStudent } from "@/components/StudentContext";
 
 const COURSE_ID = 1;
@@ -27,7 +20,7 @@ type ExerciseContextValue = {
 
 const ExerciseContext = createContext<ExerciseContextValue | null>(null);
 
-function fromGenerateAttempt(row: PracticeGenerateResult["attempts"][number]): PracticeDetail {
+function fromGenerateAttempt(row: PracticeGenerateResult["attempts"][number]) {
   const detail: PracticeDetail = {
     attempt_id: row.attempt_id,
     topic: row.topic,
@@ -39,6 +32,17 @@ function fromGenerateAttempt(row: PracticeGenerateResult["attempts"][number]): P
     submitted: false,
   };
   return detail;
+}
+
+async function loadSessionDetails(studentId: number, sid: string, attemptIds: number[]) {
+  if (sid.startsWith("solo-")) {
+    const row = await getPracticeDetail(attemptIds[0]);
+    const result = [row];
+    return result;
+  }
+  const data = await getPracticeSession(studentId, sid, COURSE_ID);
+  const result = data.attempts;
+  return result;
 }
 
 export function ExerciseProvider({ children }: { children: React.ReactNode }) {
@@ -64,31 +68,21 @@ export function ExerciseProvider({ children }: { children: React.ReactNode }) {
     setSessionDetails(details);
   }, []);
 
-  const openSession = useCallback(
-    async (sid: string, attemptIds: number[]) => {
-      setSessionId(sid);
-      setLoadingSession(true);
-      try {
-        if (sid.startsWith("solo-")) {
-          const row = await getPracticeDetail(attemptIds[0]);
-          setSessionDetails([row]);
-          return;
-        }
-        const data = await getPracticeSession(studentId, sid, COURSE_ID);
-        setSessionDetails(data.attempts);
-      } catch {
-        setSessionDetails([]);
-      } finally {
-        setLoadingSession(false);
-      }
-    },
-    [studentId],
-  );
+  const openSession = useCallback(async (sid: string, attemptIds: number[]) => {
+    setSessionId(sid);
+    setLoadingSession(true);
+    try {
+      const details = await loadSessionDetails(studentId, sid, attemptIds);
+      setSessionDetails(details);
+    } catch {
+      setSessionDetails([]);
+    } finally {
+      setLoadingSession(false);
+    }
+  }, [studentId]);
 
   const patchSessionItem = useCallback((attemptId: number, patch: Partial<PracticeDetail>) => {
-    setSessionDetails((rows) =>
-      rows.map((row) => (row.attempt_id === attemptId ? { ...row, ...patch } : row)),
-    );
+    setSessionDetails((rows) => rows.map((row) => (row.attempt_id === attemptId ? { ...row, ...patch } : row)));
   }, []);
 
   useEffect(() => {
@@ -97,25 +91,16 @@ export function ExerciseProvider({ children }: { children: React.ReactNode }) {
   }, [studentId, refreshPractices, clearSession]);
 
   const value = useMemo(
-    () => ({
-      practices,
-      sessionId,
-      sessionDetails,
-      loadingSession,
-      openSession,
-      openFromGenerate,
-      patchSessionItem,
-      clearSession,
-      refreshPractices,
-    }),
+    () => ({ practices, sessionId, sessionDetails, loadingSession, openSession, openFromGenerate, patchSessionItem, clearSession, refreshPractices }),
     [practices, sessionId, sessionDetails, loadingSession, openSession, openFromGenerate, patchSessionItem, clearSession, refreshPractices],
   );
-
-  return <ExerciseContext.Provider value={value}>{children}</ExerciseContext.Provider>;
+  const provider = <ExerciseContext.Provider value={value}>{children}</ExerciseContext.Provider>;
+  return provider;
 }
 
 export function useExercise() {
   const ctx = useContext(ExerciseContext);
   if (!ctx) throw new Error("useExercise must be used within ExerciseProvider");
-  return ctx;
+  const result = ctx;
+  return result;
 }

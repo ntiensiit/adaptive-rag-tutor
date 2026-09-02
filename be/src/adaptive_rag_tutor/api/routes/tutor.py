@@ -1,6 +1,7 @@
+import uuid
+
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
-import uuid
 
 from adaptive_rag_tutor.api.deps import DbDep
 from adaptive_rag_tutor.db.models import Course, Interaction, PracticeAttempt

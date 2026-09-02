@@ -13,6 +13,42 @@ from adaptive_rag_tutor.tutoring.schemas import ConversationOut, DayProgressOut,
 router = APIRouter()
 
 
+def _require_student(db: Session, student_id: int) -> Student:
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    result = student
+    return result
+
+
+def _practice_title(question: str) -> str:
+    text = question.strip().replace("\n", " ")
+    title = text[:80] + ("..." if len(text) > 80 else "")
+    return title
+
+
+def _practice_detail(row: PracticeAttempt) -> PracticeDetailOut:
+    submitted = row.student_answer is not None
+    result = PracticeDetailOut(
+        attempt_id=row.id,
+        topic=row.topic,
+        question=row.question,
+        question_type=row.question_type or "short_answer",
+        student_answer=row.student_answer,
+        feedback=row.feedback,
+        correct=row.correct,
+        submitted=submitted,
+    )
+    return result
+
+
+def _month_range(year: int, month: int) -> tuple[datetime, datetime]:
+    start = datetime(year, month, 1)
+    end = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
+    result = (start, end)
+    return result
+
+
 class StudentCreate(BaseModel):
     name: str
 
@@ -48,9 +84,7 @@ def list_students(db: Session = DbDep) -> list[StudentOut]:
 
 @router.get("/{student_id}/conversations", response_model=list[ConversationOut])
 def list_conversations(student_id: int, course_id: int = 1, db: Session = DbDep) -> list[ConversationOut]:
-    student = db.get(Student, student_id)
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    _require_student(db, student_id)
     rows = (
         db.query(Conversation)
         .filter(Conversation.student_id == student_id, Conversation.course_id == course_id)
@@ -73,24 +107,15 @@ def list_conversations(student_id: int, course_id: int = 1, db: Session = DbDep)
     return result
 
 
-def _practice_title(question: str) -> str:
-    text = question.strip().replace("\n", " ")
-    title = text[:80] + ("..." if len(text) > 80 else "")
-    return title
-
-
 @router.get("/{student_id}/practices", response_model=list[PracticeSummaryOut])
 def list_practices(student_id: int, course_id: int = 1, session_id: str | None = None, db: Session = DbDep) -> list[PracticeSummaryOut]:
-    student = db.get(Student, student_id)
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    _require_student(db, student_id)
     query = db.query(PracticeAttempt).filter(PracticeAttempt.student_id == student_id, PracticeAttempt.course_id == course_id)
     if session_id:
-        query = query.filter(PracticeAttempt.session_id == session_id)
-    if session_id:
-        rows = query.order_by(PracticeAttempt.id.asc()).all()
+        query = query.filter(PracticeAttempt.session_id == session_id).order_by(PracticeAttempt.id.asc())
     else:
-        rows = query.order_by(PracticeAttempt.id.desc()).all()
+        query = query.order_by(PracticeAttempt.id.desc())
+    rows = query.all()
     result = [
         PracticeSummaryOut(
             id=row.id,
@@ -108,26 +133,9 @@ def list_practices(student_id: int, course_id: int = 1, session_id: str | None =
     return result
 
 
-def _practice_detail(row: PracticeAttempt) -> PracticeDetailOut:
-    submitted = row.student_answer is not None
-    result = PracticeDetailOut(
-        attempt_id=row.id,
-        topic=row.topic,
-        question=row.question,
-        question_type=row.question_type or "short_answer",
-        student_answer=row.student_answer,
-        feedback=row.feedback,
-        correct=row.correct,
-        submitted=submitted,
-    )
-    return result
-
-
 @router.get("/{student_id}/practice-sessions/{session_id}", response_model=PracticeSessionOut)
 def practice_session(student_id: int, session_id: str, course_id: int = 1, db: Session = DbDep) -> PracticeSessionOut:
-    student = db.get(Student, student_id)
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    _require_student(db, student_id)
     rows = (
         db.query(PracticeAttempt)
         .filter(
@@ -145,18 +153,9 @@ def practice_session(student_id: int, session_id: str, course_id: int = 1, db: S
     return result
 
 
-def _month_range(year: int, month: int) -> tuple[datetime, datetime]:
-    start = datetime(year, month, 1)
-    end = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
-    result = (start, end)
-    return result
-
-
 @router.get("/{student_id}/progress/timeline", response_model=ProgressTimelineOut)
 def progress_timeline(student_id: int, year: int, month: int, topic: str | None = None, db: Session = DbDep) -> ProgressTimelineOut:
-    student = db.get(Student, student_id)
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    _require_student(db, student_id)
     if month < 1 or month > 12:
         raise HTTPException(status_code=400, detail="Invalid month")
     start, end = _month_range(year, month)
@@ -213,9 +212,7 @@ def progress_timeline(student_id: int, year: int, month: int, topic: str | None 
 
 @router.get("/{student_id}/progress", response_model=ProgressOut)
 def student_progress(student_id: int, db: Session = DbDep) -> ProgressOut:
-    student = db.get(Student, student_id)
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    _require_student(db, student_id)
     mastery = all_mastery(db, student_id)
     misc_rows = db.query(Misconception).filter(Misconception.student_id == student_id).all()
     misconceptions = [{"topic": row.topic, "pattern": row.pattern, "count": row.count} for row in misc_rows]
